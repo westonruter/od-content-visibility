@@ -30,6 +30,8 @@ class ODCV_Content_Visibility_Visitor {
 		if ( ! is_string( $processor->get_attribute( 'class' ) ) ) {
 			return false;
 		}
+
+		// The one class that is always present on the container elements for posts in The Loop is hentry. See get_post_class().
 		if ( true !== $processor->has_class( 'hentry' ) ) {
 			return false;
 		}
@@ -59,6 +61,7 @@ class ODCV_Content_Visibility_Visitor {
 			}
 			$heights = array();
 			foreach ( $xpath_elements_map[ $xpath ] as $element ) {
+				// TODO: We can't rely on the boundingClientRect because if the content is hidden then it is shown with a different height, then this won't be captured.
 				$heights[] = $element->get_bounding_client_rect()['height'];
 			}
 			if ( count( $heights ) === 0 ) {

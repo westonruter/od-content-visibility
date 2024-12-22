@@ -22,10 +22,15 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly.
 }
 
+const OD_CONTENT_VISIBILITY_VERSION = '0.1.0';
+
 add_action(
 	'od_init',
 	static function (): void {
 		require_once __DIR__ . '/helper.php';
-		require_once __DIR__ . '/hooks.php';
+
+		add_action( 'od_register_tag_visitors', 'odcv_register_tag_visitor' );
+		add_filter( 'od_extension_module_urls', 'odcv_filter_extension_module_urls' );
+		add_filter( 'od_url_metric_schema_element_item_additional_properties', 'odcv_add_element_item_schema_properties' );
 	}
 );
