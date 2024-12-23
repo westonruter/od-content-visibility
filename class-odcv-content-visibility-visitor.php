@@ -43,6 +43,13 @@ class ODCV_Content_Visibility_Visitor {
 			$processor->set_attribute( 'id', $id );
 		}
 
+		/**
+		 * Groups of URL Metrics which have CV applied.
+		 *
+		 * @var OD_URL_Metric_Group[] $applied_groups
+		 */
+		$applied_groups = array();
+
 		$style_rules = array();
 		foreach ( $context->url_metric_group_collection as $group ) {
 			$max_intersection_ratio = $group->get_element_max_intersection_ratio( $xpath );
@@ -69,7 +76,27 @@ class ODCV_Content_Visibility_Visitor {
 			}
 			$average_height = array_sum( $heights ) / count( $heights );
 			$style_rules[]  = "@media {$media_query} { #{$id} { content-visibility: auto; contain-intrinsic-size: auto {$average_height}px; } }";
+
+			$applied_groups[] = $group;
 		}
+
+		$processor->set_meta_attribute(
+			'cv-auto-viewports',
+			join(
+				' ',
+				array_map(
+					static function ( OD_URL_Metric_Group $group ): string {
+						$range = $group->get_minimum_viewport_width() . '-';
+						if ( $group->get_maximum_viewport_width() !== PHP_INT_MAX ) {
+							$range .= $group->get_maximum_viewport_width();
+						}
+						return $range;
+					},
+					$applied_groups
+				)
+			)
+		);
+
 
 		if ( count( $style_rules ) > 0 ) {
 			$processor->append_head_html( '<style>' . join( "\n", $style_rules ) . '</style>' );

@@ -57,7 +57,7 @@ function odcv_add_element_item_schema_properties( $additional_properties ): arra
 	}
 
 	$additional_properties['contentVisibilityVisibleHeight'] = array(
-		'type'    => 'number',
+		'type'    => array( 'number', 'null' ),
 		'minimum' => 0,
 	);
 	return $additional_properties;
