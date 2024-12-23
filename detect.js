@@ -100,6 +100,7 @@ export async function initialize() {
  * `boundingClientRect` that was obtained by the intersection observer. Otherwise, we have to determine the height of
  * the element once it is displayed at the `contentvisibilityautostatechange` event.
  *
+ * @todo This may not be needed, or it could be refactored to be combined with an intersection observer. Are there guarantees that CV-auto will be visible when an intersection observer callback fires? If so, it could be relied on exclusively instead of this event.
  * @since 0.1.0
  *
  * @param {HTMLElement} element - Element.
