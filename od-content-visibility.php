@@ -32,5 +32,6 @@ add_action(
 		add_action( 'od_register_tag_visitors', 'odcv_register_tag_visitor' );
 		add_filter( 'od_extension_module_urls', 'odcv_filter_extension_module_urls' );
 		add_filter( 'od_url_metric_schema_element_item_additional_properties', 'odcv_add_element_item_schema_properties' );
+		add_action( 'od_url_metric_stored', 'odcv_persist_element_height_outside_url_metrics' );
 	}
 );

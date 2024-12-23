@@ -57,8 +57,72 @@ function odcv_add_element_item_schema_properties( $additional_properties ): arra
 	}
 
 	$additional_properties['contentVisibilityVisibleHeight'] = array(
-		'type'    => array( 'number', 'null' ),
+		'type'    => 'number',
 		'minimum' => 0,
 	);
 	return $additional_properties;
+}
+
+/**
+ * Gets the post meta key for storing the content-visibility visible heights.
+ *
+ * @since n.e.x.t
+ *
+ * @param OD_URL_Metric_Group $group Group.
+ * @return non-empty-string Post meta key.
+ */
+function odcv_get_content_visibility_visible_heights_post_meta_key( OD_URL_Metric_Group $group ): string {
+	return 'content_visibility_visible_heights:' . $group->get_minimum_viewport_width();
+}
+
+/**
+ * Persists height of CV element in post meta so it is available even when no URL Metrics have collected the height.
+ *
+ * If visitors repeatedly visit the page and never scroll a CV-auto element into view, then the actual height of the
+ * element will never be found. This necessitates that whenever we discover the height of an element that we persist
+ * it outside of URL Metrics. Note: This same issue can occur for the resized heights of embeds in Embed Optimizer!
+ *
+ * @since 0.1.0
+ * @access private
+ *
+ * @param OD_URL_Metric_Store_Request_Context $context Context.
+ */
+function odcv_persist_element_height_outside_url_metrics( OD_URL_Metric_Store_Request_Context $context ): void {
+	$post_meta_key = odcv_get_content_visibility_visible_heights_post_meta_key( $context->url_metric_group );
+
+	$current_xpaths                     = array();
+	$content_visibility_visible_heights = array();
+
+	foreach ( $context->url_metric->get_elements() as $element ) {
+		$current_xpaths[] = $element->get_xpath();
+
+		$content_visibility_visible_height = $element->get( 'contentVisibilityVisibleHeight' );
+		if ( is_numeric( $content_visibility_visible_height ) ) {
+			$content_visibility_visible_heights[ $element->get_xpath() ] = $content_visibility_visible_height;
+		}
+	}
+
+	// Parse out the stored content-visibility visible heights to retain any that are still valid but not to overwrite any which were just submitted.
+	$stored_content_visibility_visible_heights = get_post_meta( $context->post_id, $post_meta_key, true );
+	if ( is_array( $stored_content_visibility_visible_heights ) ) {
+		foreach ( $stored_content_visibility_visible_heights as $xpath => $stored_content_visibility_visible_height ) {
+			if (
+				in_array( $xpath, $current_xpaths, true )
+				&&
+				! isset( $content_visibility_visible_heights[ $xpath ] )
+				&&
+				is_numeric( $stored_content_visibility_visible_height )
+				&&
+				$stored_content_visibility_visible_height >= 0
+			) {
+				$content_visibility_visible_heights[ $xpath ] = $stored_content_visibility_visible_height;
+			}
+		}
+	}
+
+	if ( count( $content_visibility_visible_heights ) === 0 ) {
+		delete_post_meta( $context->post_id, $post_meta_key );
+	} else {
+		update_post_meta( $context->post_id, $post_meta_key, $content_visibility_visible_heights );
+	}
 }
