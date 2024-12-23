@@ -18,7 +18,12 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class ODCV_Content_Visibility_Visitor {
 
-
+	/**
+	 * Visible heights of elements with CV grouped by minimum viewport width.
+	 *
+	 * @since 0.1.0
+	 * @var array<int, array<string, int>>
+	 */
 	private $content_visibility_visible_heights_by_minimum_viewport_width;
 
 	/**
