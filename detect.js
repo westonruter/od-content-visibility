@@ -47,7 +47,6 @@ function onContentVisibilityAutoStateChange( event ) {
 
 	// Capture the height of the now-visible element.
 	const height = target.getBoundingClientRect().height;
-	console.log( `[Content Visibility] Height: ${ height } for`, event.target );
 	visibleElementHeights.set( xpath, height );
 
 	// Now that we've determined the actual height, we don't need to keep listening for this event on this element.
@@ -56,7 +55,7 @@ function onContentVisibilityAutoStateChange( event ) {
 		onContentVisibilityAutoStateChange
 	);
 
-	// TODO: If the current viewport is included in the ranges of data-od-meta-content-visibility-auto, then we need to capture the
+	// TODO: Remove debug code.
 	console.info( 'contentvisibilityautostatechange', event.target, {
 		originalHeight: originalElementHeights.get( xpath ),
 		currentHeight: height,
