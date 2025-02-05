@@ -18,9 +18,11 @@
  * @package od-content-visibility
  */
 
+// @codeCoverageIgnoreStart
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly.
 }
+// @codeCoverageIgnoreEnd
 
 const OD_CONTENT_VISIBILITY_VERSION = '0.1.0';
 
