@@ -55,9 +55,8 @@ class ODCV_Content_Visibility_Visitor {
 	 * Visits a tag.
 	 *
 	 * @param OD_Tag_Visitor_Context $context Tag visitor context.
-	 * @return bool Whether the tag should be tracked in URL Metrics.
 	 */
-	public function __invoke( OD_Tag_Visitor_Context $context ): bool {
+	public function __invoke( OD_Tag_Visitor_Context $context ): void {
 		$processor = $context->processor;
 
 		// We cannot proceed if there is no od_url_metrics post created with the necessary CV postmeta.
@@ -68,13 +67,16 @@ class ODCV_Content_Visibility_Visitor {
 
 		// We only look at elements that have the hentry class, so we skip over any elements that don't have class attributes.
 		if ( ! is_string( $processor->get_attribute( 'class' ) ) ) {
-			return false;
+			return;
 		}
 
 		// The one class that is always present on the container elements for posts in The Loop is hentry. See get_post_class().
 		if ( true !== $processor->has_class( 'hentry' ) ) {
-			return false;
+			return;
 		}
+
+		// At this point, we know that this is a relevant element for applying CV, so we will track it in URL Metrics to obtain the required height.
+		$context->track_tag();
 
 		$xpath = $processor->get_xpath();
 		$id    = $processor->get_attribute( 'id' );
@@ -132,7 +134,5 @@ class ODCV_Content_Visibility_Visitor {
 		if ( count( $style_rules ) > 0 ) {
 			$processor->append_head_html( '<style>' . join( "\n", $style_rules ) . '</style>' );
 		}
-
-		return true;
 	}
 }
