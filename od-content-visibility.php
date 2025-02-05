@@ -28,7 +28,10 @@ const OD_CONTENT_VISIBILITY_VERSION = '0.1.0';
 
 add_action(
 	'od_init',
-	static function (): void {
+	static function ( $od_version ): void {
+		if ( version_compare( (string) strtok( $od_version, '-' ), '1.0.0', '<' ) || '1.0.0-beta1' === $od_version ) {
+			return;
+		}
 		require_once __DIR__ . '/helper.php';
 
 		add_action( 'od_register_tag_visitors', 'odcv_register_tag_visitor' );

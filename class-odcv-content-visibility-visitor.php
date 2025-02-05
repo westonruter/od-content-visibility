@@ -79,7 +79,9 @@ class ODCV_Content_Visibility_Visitor {
 		$context->track_tag();
 
 		$xpath = $processor->get_xpath();
-		$id    = $processor->get_attribute( 'id' );
+
+		// Make sure we have an ID on the element that we can use to apply the CV style rules.
+		$id = $processor->get_attribute( 'id' );
 		if ( ! is_string( $id ) ) {
 			$id = 'odcv-' . md5( $xpath );
 			$processor->set_attribute( 'id', $id );
@@ -121,7 +123,7 @@ class ODCV_Content_Visibility_Visitor {
 				array_map(
 					static function ( OD_URL_Metric_Group $group ): string {
 						$range = $group->get_minimum_viewport_width() . '-';
-						if ( $group->get_maximum_viewport_width() !== PHP_INT_MAX ) {
+						if ( null !== $group->get_maximum_viewport_width() ) {
 							$range .= $group->get_maximum_viewport_width();
 						}
 						return $range;
