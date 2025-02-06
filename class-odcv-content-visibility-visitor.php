@@ -60,7 +60,7 @@ class ODCV_Content_Visibility_Visitor {
 		$processor = $context->processor;
 
 		// We cannot proceed if there is no od_url_metrics post created with the necessary CV postmeta.
-		$url_metrics_post_id = $context->url_metrics_post_id;
+		$url_metrics_post_id = $context->url_metrics_id;
 		if ( null === $url_metrics_post_id ) {
 			return;
 		}

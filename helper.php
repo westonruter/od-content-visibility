@@ -123,8 +123,8 @@ function odcv_persist_element_height_outside_url_metrics( OD_URL_Metric_Store_Re
 	}
 
 	if ( count( $content_visibility_visible_heights ) === 0 ) {
-		delete_post_meta( $context->post_id, $post_meta_key );
+		delete_post_meta( $context->url_metrics_id, $post_meta_key );
 	} else {
-		update_post_meta( $context->post_id, $post_meta_key, $content_visibility_visible_heights );
+		update_post_meta( $context->url_metrics_id, $post_meta_key, $content_visibility_visible_heights );
 	}
 }
