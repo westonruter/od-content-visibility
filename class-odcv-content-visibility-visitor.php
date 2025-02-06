@@ -31,30 +31,19 @@ class ODCV_Content_Visibility_Visitor {
 	/**
 	 * Gets the height for the CV-auto visible element.
 	 *
-	 * @param OD_URL_Metric_Group    $group   Group.
-	 * @param string                 $xpath   XPath.
-	 * @param OD_Tag_Visitor_Context $context Context.
+	 * @param OD_URL_Metric_Group $group               Group.
+	 * @param positive-int        $url_metrics_post_id Post ID for the od_url_metrics post.
+	 * @param string              $xpath               XPath.
 	 *
 	 * @return float|null Height or null if not present.
-	 * @noinspection PhpDocMissingThrowsInspection
 	 */
-	function get_content_visibility_visible_height( OD_URL_Metric_Group $group, string $xpath, OD_Tag_Visitor_Context $context ): ?float {
+	private function get_content_visibility_visible_height( OD_URL_Metric_Group $group, int $url_metrics_post_id, string $xpath ): ?float {
 		if ( null === $this->content_visibility_visible_heights_by_minimum_viewport_width ) {
 			$this->content_visibility_visible_heights_by_minimum_viewport_width = array();
-			$post = OD_URL_Metrics_Post_Type::get_post( od_get_url_metrics_slug( od_get_normalized_query_vars() ) ); // TODO: The post ID should be added to the $context.
-			if ( null === $post ) {
-				/**
-				 * No WP_Exception is thrown by wp_trigger_error() since E_USER_ERROR is not passed as the error level.
-				 *
-				 * @noinspection PhpUnhandledExceptionInspection
-				 */
-				wp_trigger_error( __METHOD__, 'Unexpectedly the post is null!' );
-			} else {
-				foreach ( $context->url_metric_group_collection as $other_group ) {
-					$content_visibility_visible_heights = get_post_meta( $post->ID, odcv_get_content_visibility_visible_heights_post_meta_key( $other_group ), true );
-					if ( is_array( $content_visibility_visible_heights ) ) {
-						$this->content_visibility_visible_heights_by_minimum_viewport_width[ $other_group->get_minimum_viewport_width() ] = $content_visibility_visible_heights;
-					}
+			foreach ( $group->get_collection() as $other_group ) {
+				$content_visibility_visible_heights = get_post_meta( $url_metrics_post_id, odcv_get_content_visibility_visible_heights_post_meta_key( $other_group ), true );
+				if ( is_array( $content_visibility_visible_heights ) ) {
+					$this->content_visibility_visible_heights_by_minimum_viewport_width[ $other_group->get_minimum_viewport_width() ] = $content_visibility_visible_heights;
 				}
 			}
 		}
@@ -66,22 +55,33 @@ class ODCV_Content_Visibility_Visitor {
 	 * Visits a tag.
 	 *
 	 * @param OD_Tag_Visitor_Context $context Tag visitor context.
-	 * @return bool Whether the tag should be tracked in URL Metrics.
 	 */
-	public function __invoke( OD_Tag_Visitor_Context $context ): bool {
+	public function __invoke( OD_Tag_Visitor_Context $context ): void {
 		$processor = $context->processor;
 
+		// We cannot proceed if there is no od_url_metrics post created with the necessary CV postmeta.
+		$url_metrics_post_id = $context->url_metrics_id;
+		if ( null === $url_metrics_post_id ) {
+			return;
+		}
+
+		// We only look at elements that have the hentry class, so we skip over any elements that don't have class attributes.
 		if ( ! is_string( $processor->get_attribute( 'class' ) ) ) {
-			return false;
+			return;
 		}
 
 		// The one class that is always present on the container elements for posts in The Loop is hentry. See get_post_class().
 		if ( true !== $processor->has_class( 'hentry' ) ) {
-			return false;
+			return;
 		}
 
+		// At this point, we know that this is a relevant element for applying CV, so we will track it in URL Metrics to obtain the required height.
+		$context->track_tag();
+
 		$xpath = $processor->get_xpath();
-		$id    = $processor->get_attribute( 'id' );
+
+		// Make sure we have an ID on the element that we can use to apply the CV style rules.
+		$id = $processor->get_attribute( 'id' );
 		if ( ! is_string( $id ) ) {
 			$id = 'odcv-' . md5( $xpath );
 			$processor->set_attribute( 'id', $id );
@@ -101,7 +101,7 @@ class ODCV_Content_Visibility_Visitor {
 				continue;
 			}
 
-			$height = $this->get_content_visibility_visible_height( $group, $xpath, $context );
+			$height = $this->get_content_visibility_visible_height( $group, $url_metrics_post_id, $xpath );
 			if ( null === $height ) {
 				continue;
 			}
@@ -123,7 +123,7 @@ class ODCV_Content_Visibility_Visitor {
 				array_map(
 					static function ( OD_URL_Metric_Group $group ): string {
 						$range = $group->get_minimum_viewport_width() . '-';
-						if ( $group->get_maximum_viewport_width() !== PHP_INT_MAX ) {
+						if ( null !== $group->get_maximum_viewport_width() ) {
 							$range .= $group->get_maximum_viewport_width();
 						}
 						return $range;
@@ -136,7 +136,5 @@ class ODCV_Content_Visibility_Visitor {
 		if ( count( $style_rules ) > 0 ) {
 			$processor->append_head_html( '<style>' . join( "\n", $style_rules ) . '</style>' );
 		}
-
-		return true;
 	}
 }
