@@ -24,12 +24,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 // @codeCoverageIgnoreEnd
 
-const OD_CONTENT_VISIBILITY_VERSION = '0.1.0';
+const OD_CONTENT_VISIBILITY_VERSION = '0.2.0';
 
 add_action(
 	'od_init',
 	static function ( $od_version ): void {
-		if ( version_compare( (string) strtok( $od_version, '-' ), '1.0.0', '<' ) || '1.0.0-beta1' === $od_version ) {
+		if ( version_compare( $od_version, '1.0.0-beta4', '<' ) ) {
+			// TODO: Admin notice.
 			return;
 		}
 		require_once __DIR__ . '/helper.php';

@@ -2,12 +2,30 @@
  * @typedef {import("web-vitals").LCPMetric} LCPMetric
  * @typedef {import("../optimization-detective/types.ts").InitializeCallback} InitializeCallback
  * @typedef {import("../optimization-detective/types.ts").InitializeArgs} InitializeArgs
- * @typedef {import("../optimization-detective/types.ts").FinalizeArgs} FinalizeArgs
- * @typedef {import("../optimization-detective/types.ts").FinalizeCallback} FinalizeCallback
+ * @typedef {import("../optimization-detective/types.ts").LogFunction} LogFunction
+ * @typedef {import("../optimization-detective/types.ts").ExtendElementDataFunction} ExtendElementDataFunction
  */
 
+/**
+ * Add type definition for the sake of eslint's jsdoc/no-undefined-types rule.
+ *
+ * @typedef {Object} ContentVisibilityAutoStateChangeEvent
+ * @augments Event
+ * @property {boolean} skipped - Returns true if the user agent is skipping the element's rendering, or false otherwise.
+ */
+
+/**
+ * Data attribute.
+ *
+ * @type {string}
+ */
 const dataCVAutoViewportsAttribute = 'data-od-cv-auto-viewports';
 
+/**
+ * Data attribute.
+ *
+ * @type {string}
+ */
 const dataXPathAttribute = 'data-od-xpath';
 
 /**
@@ -18,19 +36,9 @@ const dataXPathAttribute = 'data-od-xpath';
 const elementsByXPath = new Map();
 
 /**
- * Map of XPath to the height of elements with content-visibility:auto which have been made visible.
- *
- * @type {Map<string, number>}
+ * @type {ExtendElementDataFunction}
  */
-const visibleElementHeights = new Map();
-
-/**
- * Map of element XPath to the original boundingClientRect.
- *
- * @todo Remove.
- * @type {Map<string, number>}
- */
-const originalElementHeights = new Map();
+let extendElementData;
 
 /**
  * Handles contentvisibilityautostatechange event on a tracked element.
@@ -46,21 +54,16 @@ function onContentVisibilityAutoStateChange( event ) {
 	const xpath = target.getAttribute( dataXPathAttribute );
 
 	// Capture the height of the now-visible element.
-	const height = target.getBoundingClientRect().height;
-	visibleElementHeights.set( xpath, height );
+	// TODO: What about hasContentVisibilityApplied( element )
+	extendElementData( xpath, {
+		contentVisibilityVisibleHeight: target.getBoundingClientRect().height,
+	} );
 
 	// Now that we've determined the actual height, we don't need to keep listening for this event on this element.
 	target.removeEventListener(
 		'contentvisibilityautostatechange',
 		onContentVisibilityAutoStateChange
 	);
-
-	// TODO: Remove debug code.
-	console.info( 'contentvisibilityautostatechange', event.target, {
-		originalHeight: originalElementHeights.get( xpath ),
-		currentHeight: height,
-		heightDiff: originalElementHeights.get( xpath ) - height,
-	} );
 }
 
 /**
@@ -70,7 +73,9 @@ function onContentVisibilityAutoStateChange( event ) {
  *
  * @type {InitializeCallback}
  */
-export async function initialize() {
+export async function initialize( { extendElementData: _extendElementData } ) {
+	extendElementData = _extendElementData;
+
 	/** @type NodeListOf<HTMLElement> */
 	const candidateElements = document.querySelectorAll(
 		[ dataCVAutoViewportsAttribute, dataXPathAttribute ]
@@ -80,8 +85,6 @@ export async function initialize() {
 	for ( /** @type {HTMLElement} */ const el of candidateElements ) {
 		const xpath = el.getAttribute( dataXPathAttribute );
 		elementsByXPath.set( xpath, el );
-
-		originalElementHeights.set( xpath, el.getBoundingClientRect().height ); // TODO: Remove.
 
 		el.addEventListener(
 			'contentvisibilityautostatechange',
@@ -131,34 +134,4 @@ function hasContentVisibilityApplied( element ) {
 	}
 
 	return false;
-}
-
-/**
- * Finalizes extension.
- *
- * @since 0.1.0
- *
- * @type {FinalizeCallback}
- * @param {FinalizeArgs} args Args.
- */
-export async function finalize( { getElementData, extendElementData } ) {
-	for ( const [ xpath, element ] of elementsByXPath.entries() ) {
-		let contentVisibilityVisibleHeight = null;
-
-		if ( visibleElementHeights.has( xpath ) ) {
-			contentVisibilityVisibleHeight = visibleElementHeights.get( xpath );
-		} else if ( ! hasContentVisibilityApplied( element ) ) {
-			const elementData = getElementData( xpath );
-			if ( elementData ) {
-				contentVisibilityVisibleHeight =
-					elementData.boundingClientRect.height;
-			}
-		}
-
-		if ( contentVisibilityVisibleHeight !== null ) {
-			extendElementData( xpath, {
-				contentVisibilityVisibleHeight,
-			} );
-		}
-	}
 }
