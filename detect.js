@@ -7,14 +7,6 @@
  */
 
 /**
- * Add type definition for the sake of eslint's jsdoc/no-undefined-types rule.
- *
- * @typedef {Object} ContentVisibilityAutoStateChangeEvent
- * @augments Event
- * @property {boolean} skipped - Returns true if the user agent is skipping the element's rendering, or false otherwise.
- */
-
-/**
  * Data attribute.
  *
  * @type {string}
