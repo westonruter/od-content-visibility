@@ -6,7 +6,7 @@
  * Requires at least: 6.5
  * Requires PHP: 7.2
  * Requires Plugins: optimization-detective
- * Version: 0.1.0
+ * Version: 0.2.0
  * Author: Weston Ruter
  * Author URI: https://weston.ruter.net/
  * License: GPLv2 or later
@@ -28,11 +28,31 @@ const OD_CONTENT_VISIBILITY_VERSION = '0.2.0';
 
 add_action(
 	'od_init',
-	static function ( $od_version ): void {
-		if ( version_compare( $od_version, '1.0.0-beta4', '<' ) ) {
-			// TODO: Admin notice.
+	static function ( $optimization_detective_version ): void {
+		$required_od_version = '1.0.0-beta4';
+		if ( ! version_compare( $optimization_detective_version, $required_od_version, '>=' ) ) {
+			add_action(
+				'admin_notices',
+				static function (): void {
+					global $pagenow;
+					if ( ! in_array( $pagenow, array( 'index.php', 'plugins.php' ), true ) ) {
+						return;
+					}
+					wp_admin_notice(
+						esc_html(
+							sprintf(
+								/* translators: %s is plugin name */
+								__( 'The %s plugin requires a newer version of the Optimization Detective plugin. Please update your plugins.', 'od-content-visibility' ), // phpcs:ignore WordPress.WP.I18n.TextDomainMismatch
+								plugin_basename( __FILE__ )
+							)
+						),
+						array( 'type' => 'warning' )
+					);
+				}
+			);
 			return;
 		}
+
 		require_once __DIR__ . '/helper.php';
 
 		add_action( 'od_register_tag_visitors', 'odcv_register_tag_visitor' );
